@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * @file
+ * Contains sample.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function sample_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {    
+    case 'help.page.sample':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('My Awesome Module') . '</p>';
+      return $output;
+
+    default:
+  }  
+}
+
+/**
+ * Implements hook_cron().
+ */
+function sample_cron() {
+  
+  // If need execute inmediatly use nex lines
+  // sample_unpublish_books_queue_builder();
+  // return;
+
+  $moduleHandler = \Drupal::service('module_handler');
+  if ($moduleHandler->moduleExists('ultimate_cron')) {
+    sample_unpublish_books_queue_builder();
+    return;
+  }  
+}
+
+
+/**
+ * Build the queue.
+ */
+function sample_unpublish_books_queue_builder() {  
+  $booksNids = \Drupal::entityQuery('node')->condition('type','book')->execute();  
+  $queue = \Drupal::queue('sample_queue_worker');
+  foreach($booksNids as $bookNid) {    
+    /*
+    $queue->createItem([
+      'nid' => $bookNid,
+      'op' => 'title'
+    ]);    
+    */
+    $queue->createItem([
+      'nid' => $bookNid,
+      'op' => 'unpublish'
+    ]);    
+  }
+}
